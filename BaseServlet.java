@@ -48,3 +48,13 @@ public abstract class BaseServlet extends HttpServlet {
             throws ServletException, IOException {  
     }  
 }
+
+
+
+//继承BaseServlet的写法
+//public class UserServlet extends BaseServlet{
+//
+//	public void add(HttpServletRequest request, HttpServletResponse response) {
+//		System.out.println("add");
+//	}
+//}
