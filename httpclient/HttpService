@@ -1,0 +1,292 @@
+package utils;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.lang3.StringUtils;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
+
+import demo.o.HttpResult;
+
+public class HttpService {
+
+	private CloseableHttpClient httpClient = HttpUtils.getCloseableHttpClient();
+
+	private RequestConfig config = HttpUtils.getConfig();
+
+	// 带参数的get请求
+
+	/**
+	 * 带参数的get请求,如果响应码为200，则返回响应体的内容；如果不为200，返回null
+	 * 
+	 * @param url
+	 * @param map
+	 * @return
+	 * @throws Exception
+	 */
+	public String doGet(String url, Map<String, Object> map) throws Exception {
+		// 设置请求uri
+		URIBuilder uriBuilder = new URIBuilder(url);
+
+		// 声明 http get 请求
+		HttpGet httpGet = new HttpGet();
+
+		// 设置请求配置信息
+		httpGet.setConfig(config);
+
+		if (map != null) {
+			// 遍历map
+			for (Map.Entry<String, Object> entry : map.entrySet()) {
+				// 设置请求参数
+				uriBuilder.setParameter(entry.getKey(), entry.getValue()
+						.toString());
+			}
+
+		}
+
+		// 把uri设置到httpget中
+		httpGet.setURI(uriBuilder.build());
+
+		CloseableHttpResponse response = null;
+		try {
+			// 发起请求
+			response = this.httpClient.execute(httpGet);
+
+			// 如果状态码为200则返回响应体的内容
+			if (response.getStatusLine().getStatusCode() == 200) {
+				return EntityUtils.toString(response.getEntity(), "UTF-8");
+			}
+
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return null;
+	}
+
+	/**
+	 * 不带参数的get请求,如果响应码为200，则返回响应体的内容；如果不为200，返回null
+	 * 
+	 * @param url
+	 * @return
+	 * @throws Exception
+	 */
+	public String doGet(String url) throws Exception {
+		return this.doGet(url, null);
+	}
+
+	/**
+	 * 带参数的post请求
+	 * 
+	 * @param url
+	 * @param map
+	 * @return
+	 * @throws Exception
+	 */
+	public HttpResult doPost(String url, Map<String, Object> map)
+			throws Exception {
+		// 设置请求uri
+		URIBuilder uriBuilder = new URIBuilder(url);
+
+		// 声明 http post 请求
+		HttpPost httpPost = new HttpPost();
+
+		// 设置请求配置信息
+		httpPost.setConfig(config);
+
+		if (map != null) {
+			// 声明保存请求参数的list
+			List<NameValuePair> list = new ArrayList<NameValuePair>();
+			// 遍历map
+			for (Map.Entry<String, Object> entry : map.entrySet()) {
+				// 设置请求参数
+				list.add(new BasicNameValuePair(entry.getKey(), entry
+						.getValue().toString()));
+			}
+
+			// 构造form的Entity对象
+			UrlEncodedFormEntity urlEncodedFormEntity = new UrlEncodedFormEntity(
+					list, "UTF-8");
+
+			// 设置到httppost方法中
+			httpPost.setEntity(urlEncodedFormEntity);
+
+		}
+
+		// 把uri设置到httpget中
+		httpPost.setURI(uriBuilder.build());
+
+		CloseableHttpResponse response = null;
+		try {
+			// 发起请求
+			response = this.httpClient.execute(httpPost);
+
+			// 构造返回对象
+			return new HttpResult(response.getStatusLine().getStatusCode(),
+					EntityUtils.toString(response.getEntity(), "UTF-8"));
+
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return null;
+	}
+
+	/**
+	 * 不带参数的post请求
+	 * 
+	 * @param url
+	 * @return
+	 * @throws Exception
+	 */
+	public HttpResult doPost(String url) throws Exception {
+		return this.doPost(url, null);
+	}
+
+	/**
+	 * 带参数的post请求，请求体是json格式的数据
+	 * 
+	 * @param url
+	 * @param jsonData
+	 * @return
+	 */
+	public HttpResult doPostJson(String url, String jsonData) {
+		HttpPost httpPost = new HttpPost(url);
+		httpPost.setConfig(config);
+
+		if (StringUtils.isNotBlank(jsonData)) {
+			// 存放需要提交的json格式数据
+			StringEntity se = new StringEntity(jsonData,
+					ContentType.APPLICATION_JSON);
+
+			// 把需要提交的json放到http post请求中
+			httpPost.setEntity(se);
+
+		}
+
+		CloseableHttpResponse response = null;
+		try {
+			response = this.httpClient.execute(httpPost);
+
+			return new HttpResult(response.getStatusLine().getStatusCode(),
+					EntityUtils.toString(response.getEntity(), "UTF-8"));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return new HttpResult();
+
+	}
+
+	/**
+	 * 带参数的put请求
+	 * 
+	 * @param url
+	 * @param map
+	 * @return
+	 * @throws Exception
+	 */
+	public HttpResult doPut(String url, Map<String, Object> map)
+			throws Exception {
+		// 设置请求uri
+		URIBuilder uriBuilder = new URIBuilder(url);
+
+		// 声明 http put 请求
+		HttpPut httpPut = new HttpPut();
+
+		// 设置请求配置信息
+		httpPut.setConfig(config);
+
+		if (map != null) {
+			// 声明保存请求参数的list
+			List<NameValuePair> list = new ArrayList<NameValuePair>();
+			// 遍历map
+			for (Map.Entry<String, Object> entry : map.entrySet()) {
+				// 设置请求参数
+				list.add(new BasicNameValuePair(entry.getKey(), entry
+						.getValue().toString()));
+			}
+
+			// 构造form的Entity对象
+			UrlEncodedFormEntity urlEncodedFormEntity = new UrlEncodedFormEntity(
+					list, "UTF-8");
+
+			// 设置到httppost方法中
+			httpPut.setEntity(urlEncodedFormEntity);
+
+		}
+
+		// 把uri设置到httpget中
+		httpPut.setURI(uriBuilder.build());
+
+		CloseableHttpResponse response = null;
+		try {
+			// 发起请求
+			response = this.httpClient.execute(httpPut);
+
+			// 构造返回对象
+			return new HttpResult(response.getStatusLine().getStatusCode(),
+					EntityUtils.toString(response.getEntity(), "UTF-8"));
+
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return null;
+
+	}
+
+	/**
+	 * 不带参数的put请求
+	 * 
+	 * @param url
+	 * @return
+	 * @throws Exception
+	 */
+	public HttpResult doPut(String url) throws Exception {
+		return this.doPut(url, null);
+	}
+
+	/**
+	 * 不带参数的delete请求
+	 * 
+	 * @param url
+	 * @return
+	 */
+	public HttpResult doDelete(String url) {
+		HttpDelete httpDelete = new HttpDelete(url);
+
+		httpDelete.setConfig(config);
+
+		CloseableHttpResponse response = null;
+
+		try {
+			response = this.httpClient.execute(httpDelete);
+
+			return new HttpResult(response.getStatusLine().getStatusCode(),
+					EntityUtils.toString(response.getEntity(), "UTF-8"));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	}
+}
